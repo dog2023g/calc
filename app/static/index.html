@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1b2a6b; --ink-soft:#6b76a8; --violet:#7c3aed; --violet-2:#a855f7; --indigo:#312e81;
+  --drop:#f0f1f8; --mono:'JetBrains Mono','Space Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{
+  display:grid;place-items:center;padding:24px 16px;font-family:var(--mono);color:var(--ink);
+  background:
+    radial-gradient(420px 420px at 18% 22%,rgba(168,85,247,.16),transparent 70%),
+    radial-gradient(480px 480px at 84% 78%,rgba(99,102,241,.14),transparent 70%),
+    #fff;
+}
+.panel{
+  position:relative;width:min(380px,100%);padding:22px 20px 24px;border-radius:40px;overflow:hidden;
+  background:linear-gradient(160deg,rgba(255,255,255,.85),rgba(250,248,255,.6));
+  backdrop-filter:blur(22px) saturate(1.3);-webkit-backdrop-filter:blur(22px) saturate(1.3);
+  border:1px solid rgba(255,255,255,.9);
+  box-shadow:0 0 0 1px rgba(124,58,237,.08),0 0 46px rgba(124,58,237,.16),0 30px 60px -24px rgba(49,46,129,.22),inset 0 1px 0 #fff;
+}
+.panel.pulse{animation:glow .9s ease-out}
+.panel.pulse::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:3;
+  background:linear-gradient(105deg,transparent 35%,rgba(168,85,247,.28) 50%,transparent 65%);
+  transform:translateX(-120%);animation:wave .9s ease-out}
+@keyframes wave{to{transform:translateX(120%)}}
+@keyframes glow{40%{box-shadow:0 0 0 1px rgba(124,58,237,.2),0 0 90px rgba(124,58,237,.38),0 30px 60px -24px rgba(49,46,129,.22),inset 0 1px 0 #fff}}
+
+#tail{height:112px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;overflow:hidden;padding:0 4px 0 14px;
+  -webkit-mask-image:linear-gradient(transparent,#000 70%);mask-image:linear-gradient(transparent,#000 70%)}
+.h{position:relative;display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--violet);
+  border-left:1.5px solid rgba(124,58,237,.35);padding-left:10px}
+.h::before{content:"";position:absolute;left:-4.25px;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;background:var(--violet-2)}
+.h b{font-weight:600}
+.h.new{animation:rise .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes rise{from{transform:translateY(22px);opacity:0}}
+
+#expr{min-height:20px;text-align:right;font-size:14px;color:var(--ink-soft);padding:0 6px}
+#expr .g{color:var(--violet);font-weight:600}
+#disp{text-align:right;font-size:52px;font-weight:300;line-height:1.15;padding:2px 6px 18px;white-space:nowrap;overflow:hidden;color:var(--ink);letter-spacing:-.02em}
+#disp.err{font-size:17px;line-height:2.6;color:#b4234f;letter-spacing:0;white-space:normal}
+#disp.reveal{animation:reveal .7s ease-out}
+@keyframes reveal{from{filter:blur(9px);opacity:0;transform:scale(.96)}}
+
+.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.b{position:relative;aspect-ratio:1;border:0;border-radius:50%;cursor:pointer;font:400 22px var(--mono);color:var(--ink);
+  background:var(--drop);box-shadow:inset 0 1px 0 #fff,0 2px 6px rgba(49,46,129,.06);overflow:hidden;
+  transition:transform .18s ease-out,box-shadow .2s;will-change:transform;-webkit-tap-highlight-color:transparent}
+.b:hover{box-shadow:inset 0 1px 0 #fff,0 6px 16px rgba(124,58,237,.14)}
+.b:active,.b.down{transform:scale(.93)!important}
+.b:focus-visible{outline:2px solid var(--violet);outline-offset:3px}
+.b::after{content:"";position:absolute;inset:0;border-radius:50%;opacity:0;pointer-events:none;
+  background:radial-gradient(circle,rgba(168,85,247,.55),rgba(124,58,237,0) 70%)}
+.b.hit::after{animation:impulse .55s ease-out}
+@keyframes impulse{0%{opacity:.95;transform:scale(.2)}100%{opacity:0;transform:scale(1.5)}}
+.b.fn{color:var(--ink-soft);background:#e8e9f5}
+.b.op{background:rgba(255,255,255,.55);box-shadow:inset 0 0 0 1.5px var(--violet),0 0 14px rgba(124,58,237,.12);color:var(--violet);font-size:26px}
+.b.op.on{background:rgba(124,58,237,.1)}
+.b.eq{background:linear-gradient(135deg,var(--indigo),var(--violet) 55%,var(--violet-2));color:#fff;font-size:28px;
+  box-shadow:0 10px 24px -6px rgba(124,58,237,.55)}
+.b.eq::after{background:radial-gradient(circle,rgba(255,255,255,.6),transparent 70%)}
+
+.fly{position:fixed;z-index:9;pointer-events:none;font:600 26px var(--mono);color:var(--violet);
+  text-shadow:0 0 14px rgba(168,85,247,.7);left:0;top:0}
+.foot{margin-top:18px;display:flex;justify-content:center;align-items:center;gap:8px;font-size:11px;color:var(--ink-soft)}
+.dot{width:7px;height:7px;border-radius:50%;background:#c9cbe0}
+.dot.ok{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,.6)}
+.dot.bad{background:#e11d48}
+@media (max-width:360px){#disp{font-size:42px}.pad{gap:9px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<main class="panel" id="panel">
+  <div id="tail" aria-label="История вычислений"></div>
+  <div id="expr"></div>
+  <div id="disp" aria-live="polite">0</div>
+  <div class="pad" id="pad">
+    <button class="b fn" data-k="c" aria-label="Очистить">C</button>
+    <button class="b fn" data-k="n" aria-label="Сменить знак">±</button>
+    <button class="b fn" data-k="%" aria-label="Процент">%</button>
+    <button class="b op" data-k="/" aria-label="Разделить">÷</button>
+    <button class="b" data-k="7">7</button><button class="b" data-k="8">8</button><button class="b" data-k="9">9</button>
+    <button class="b op" data-k="*" aria-label="Умножить">×</button>
+    <button class="b" data-k="4">4</button><button class="b" data-k="5">5</button><button class="b" data-k="6">6</button>
+    <button class="b op" data-k="-" aria-label="Вычесть">−</button>
+    <button class="b" data-k="1">1</button><button class="b" data-k="2">2</button><button class="b" data-k="3">3</button>
+    <button class="b op" data-k="+" aria-label="Сложить">+</button>
+    <button class="b fn" data-k="b" aria-label="Стереть символ">⌫</button>
+    <button class="b" data-k="0">0</button><button class="b" data-k=".">.</button>
+    <button class="b eq" data-k="=" aria-label="Равно">=</button>
+  </div>
+  <div class="foot"><span class="dot" id="dot"></span><span id="ver">API…</span></div>
+</main>
+<script>
+(() => {
+  const API = '';
+  const OPS = {'+':['add','+'],'-':['subtract','−'],'*':['multiply','×'],'/':['divide','÷']};
+  const $ = id => document.getElementById(id);
+  const disp = $('disp'), expr = $('expr'), tail = $('tail'), panel = $('panel'), pad = $('pad');
+  const btn = k => pad.querySelector(`[data-k="${CSS.escape(k)}"]`);
+
+  let acc = null, op = null, cur = '0', entered = true;
+  const history = [];
+
+  const fmt = n => String(parseFloat(Number(n).toPrecision(12)));
+  const val = () => entered ? cur : (acc !== null ? fmt(acc) : cur);
+
+  function render(reveal) {
+    const v = val();
+    disp.classList.remove('err');
+    disp.textContent = v;
+    disp.style.fontSize = Math.max(26, 52 - Math.max(0, v.length - 8) * 4) + 'px';
+    if (reveal) { disp.classList.remove('reveal'); void disp.offsetWidth; disp.classList.add('reveal'); }
+    pad.querySelectorAll('.op').forEach(b => b.classList.toggle('on', !entered && b.dataset.k === op));
+  }
+  function setExpr(showGlyph) {
+    expr.textContent = '';
+    if (acc === null || !op) return;
+    expr.append(fmt(acc) + ' ');
+    const g = document.createElement('span');
+    g.className = 'g'; g.id = 'glyph'; g.textContent = OPS[op][1];
+    if (!showGlyph) g.style.opacity = 0;
+    expr.append(g);
+  }
+  function addHistory(text, res) {
+    history.push({text, res});
+    if (history.length > 30) history.shift();
+    tail.textContent = '';
+    history.slice(-6).forEach((h, i, arr) => {
+      const d = document.createElement('div');
+      d.className = 'h' + (i === arr.length - 1 ? ' new' : '');
+      d.style.opacity = Math.max(.15, 1 - (arr.length - 1 - i) * .24);
+      const s = document.createElement('span'); s.textContent = h.text;
+      const b = document.createElement('b'); b.textContent = h.res;
+      d.append(s, b); tail.append(d);
+    });
+  }
+  function fail(msg) {
+    acc = null; op = null; cur = '0'; entered = true; setExpr(true);
+    disp.textContent = msg; disp.style.fontSize = ''; disp.classList.add('err');
+  }
+  async function calc(k, a, b) {
+    const r = await fetch(`${API}/${OPS[k][0]}`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({a, b})
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Некорректный ввод');
+    return data.result;
+  }
+
+  function fly(from, glyph) {
+    const g = $('glyph');
+    if (!g || matchMedia('(prefers-reduced-motion: reduce)').matches) { if (g) g.style.opacity = 1; return; }
+    const a = from.getBoundingClientRect(), t = g.getBoundingClientRect();
+    const el = document.createElement('span'); el.className = 'fly'; el.textContent = glyph;
+    document.body.append(el);
+    const x0 = a.left + a.width / 2, y0 = a.top + a.height / 2, x1 = t.left + t.width / 2, y1 = t.top + t.height / 2;
+    el.animate([
+      {transform: `translate(${x0}px,${y0}px) translate(-50%,-50%) scale(1.3)`, filter: 'blur(0)'},
+      {transform: `translate(${x0 + (x1 - x0) * .5}px,${y0 + (y1 - y0) * .6 - 18}px) translate(-50%,-50%) scale(1.1,.7)`, filter: 'blur(2px)', offset: .5},
+      {transform: `translate(${x1}px,${y1}px) translate(-50%,-50%) scale(1)`, filter: 'blur(0)'}
+    ], {duration: 520, easing: 'cubic-bezier(.3,.7,.2,1)'}).onfinish = () => { g.style.opacity = 1; el.remove(); };
+  }
+
+  async function handle(k, el) {
+    try {
+      if (k >= '0' && k <= '9') {
+        if (!entered) { cur = k; entered = true; }
+        else if (cur.replace(/[-.]/g, '').length < 12) cur = cur === '0' ? k : cur + k;
+        render();
+      } else if (k === '.') {
+        if (!entered) { cur = '0.'; entered = true; } else if (!cur.includes('.')) cur += '.';
+        render();
+      } else if (OPS[k]) {
+        if (op && acc !== null && entered) {
+          const r = await calc(op, acc, parseFloat(cur));
+          addHistory(`${fmt(acc)} ${OPS[op][1]} ${fmt(cur)} =`, fmt(r));
+          acc = r;
+        } else if (acc === null) acc = parseFloat(cur);
+        op = k; entered = false;
+        setExpr(false); render(); fly(el, OPS[k][1]);
+      } else if (k === '=') {
+        if (!op) return;
+        const b = entered ? parseFloat(cur) : acc;
+        const r = await calc(op, acc, b);
+        addHistory(`${fmt(acc)} ${OPS[op][1]} ${fmt(b)} =`, fmt(r));
+        cur = fmt(r); acc = null; op = null; entered = false;
+        setExpr(true); render(true);
+        panel.classList.remove('pulse'); void panel.offsetWidth; panel.classList.add('pulse');
+      } else if (k === '%') {
+        const r = await calc('/', parseFloat(val()), 100);
+        cur = fmt(r); entered = true; render(true);
+      } else if (k === 'n') {
+        const n = -parseFloat(val());
+        cur = fmt(n === 0 ? 0 : n); entered = true; render();
+      } else if (k === 'b') {
+        if (entered) { cur = cur.slice(0, -1); if (cur === '' || cur === '-') cur = '0'; render(); }
+      } else if (k === 'c') {
+        if (acc === null && cur === '0' && history.length) { history.length = 0; tail.textContent = ''; }
+        acc = null; op = null; cur = '0'; entered = true; setExpr(true); render();
+      }
+    } catch (e) {
+      fail(e instanceof TypeError ? 'Нет связи с API. Проверьте, что сервер запущен.' : e.message);
+    }
+  }
+
+  let chain = Promise.resolve();
+  const press = (k, el) => {
+    el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit');
+    chain = chain.then(() => handle(k, el));
+  };
+  pad.addEventListener('click', e => { const b = e.target.closest('.b'); if (b) press(b.dataset.k, b); });
+
+  const alias = {Enter: '=', Backspace: 'b', Escape: 'c', Delete: 'c', ',': '.', x: '*', X: '*', C: 'c', c: 'c'};
+  addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = alias[e.key] || e.key, el = btn(k);
+    if (!el) return;
+    e.preventDefault();
+    el.classList.add('down'); setTimeout(() => el.classList.remove('down'), 120);
+    press(k, el);
+  });
+
+  // магнитное притяжение кнопок к курсору
+  if (matchMedia('(hover: hover)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const btns = [...pad.querySelectorAll('.b')];
+    pad.addEventListener('pointermove', e => {
+      for (const b of btns) {
+        const r = b.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+        const d = Math.hypot(dx, dy), reach = r.width * 1.05;
+        b.style.transform = d < reach ? `translate(${dx * .22 * (1 - d / reach) * 1.6}px,${dy * .22 * (1 - d / reach) * 1.6}px)` : '';
+      }
+    });
+    pad.addEventListener('pointerleave', () => btns.forEach(b => b.style.transform = ''));
+  }
+
+  // статус API
+  fetch(`${API}/version`).then(r => r.json()).then(d => {
+    $('dot').className = 'dot ok'; $('ver').textContent = 'API v' + d.version;
+  }).catch(() => { $('dot').className = 'dot bad'; $('ver').textContent = 'API недоступен'; });
+
+  render();
+})();
+</script>
+</body>
+</html>
