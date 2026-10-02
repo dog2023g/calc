@@ -89,7 +89,6 @@ jobs:
     name: Обновить деплой на Render
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: ${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}
     steps:
       - name: Вызвать deploy hook
         run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
