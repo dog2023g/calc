@@ -6,7 +6,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-VERSION = os.getenv("APP_VERSION", "1.1.0")
+_VERSION_FILE = Path(__file__).resolve().parent.parent / "VERSION"
+_FILE_VERSION = _VERSION_FILE.read_text().strip() if _VERSION_FILE.exists() else "0.0.0"
+# APP_VERSION в окружении, если задан явно, имеет приоритет над файлом VERSION
+VERSION = os.getenv("APP_VERSION", _FILE_VERSION)
+
 
 app = FastAPI(
     title="Calculator API",
