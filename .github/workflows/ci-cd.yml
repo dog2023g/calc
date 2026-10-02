@@ -25,7 +25,7 @@ jobs:
       - name: Запустить тесты
         run: pytest -q
 
-  version-up:
+  bump-version:
     name: Обновить версию
     needs: test
     runs-on: ubuntu-latest
@@ -41,24 +41,22 @@ jobs:
           python-version: "3.12"
 
       - name: Посчитать новую версию
-        id: up
-        run: |
-          NEW_VERSION=$(python3 scripts/version_up.py)
-          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+        id: bump
+        run: python3 scripts/version_up.py
 
       - name: Закоммитить VERSION и поставить тег
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add VERSION
-          git commit -m "chore: up version to ${{ steps.bump.outputs.new_version }} [skip ci]"
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.new_version }} [skip ci]"
           git tag "v${{ steps.bump.outputs.new_version }}"
           git push origin HEAD:main
           git push origin "v${{ steps.bump.outputs.new_version }}"
 
   build-and-push:
     name: Собрать и опубликовать образ
-    needs: version-up
+    needs: bump-version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

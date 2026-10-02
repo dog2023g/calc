@@ -9,6 +9,7 @@
   "fix:"                 -> patch (исправление)
   всё остальное          -> patch (по умолчанию)
 """
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -49,6 +50,10 @@ def main() -> None:
 
     print(f"Commit type: {kind}")
     print(new_version)
+    github_output = os.environ.get("GITHUB_OUTPUT")
+    if github_output:
+        with open(github_output, "a", encoding="utf-8") as f:
+            f.write(f"new_version={new_version}\n")
 
 
 if __name__ == "__main__":
