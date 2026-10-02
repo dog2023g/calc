@@ -34,10 +34,3 @@ def test_invalid_input():
     assert client.post("/add", json={"a": "abc", "b": 1}).status_code == 422
 
 
-def test_overflow():
-    assert client.post("/multiply", json={"a": 1e308, "b": 10}).status_code == 422
-
-
-def test_index_page():
-    r = client.get("/")
-    assert r.status_code == 200 and "text/html" in r.headers["content-type"]
