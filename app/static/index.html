@@ -75,6 +75,78 @@ body{
 .dot{width:7px;height:7px;border-radius:50%;background:#c9cbe0}
 .dot.ok{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,.6)}
 .dot.bad{background:#e11d48}
+
+.tool-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.tool-btn,.comments-btn{
+  border:0;cursor:pointer;font:600 12px var(--mono);color:var(--ink);
+  background:rgba(255,255,255,.68);border:1px solid rgba(124,58,237,.16);
+  box-shadow:inset 0 1px 0 #fff,0 5px 14px rgba(49,46,129,.08);
+  transition:transform .18s ease,box-shadow .2s,background .2s;
+}
+.tool-btn{min-height:42px;border-radius:18px;padding:0 14px}
+.tool-btn:hover,.comments-btn:hover{box-shadow:inset 0 1px 0 #fff,0 8px 20px rgba(124,58,237,.13)}
+.tool-btn:active,.comments-btn:active{transform:scale(.97)}
+.tool-btn:focus-visible,.comments-btn:focus-visible{outline:2px solid var(--violet);outline-offset:3px}
+.comments-btn{
+  position:fixed;right:22px;bottom:22px;z-index:20;
+  min-width:132px;height:44px;border-radius:22px;padding:0 17px;
+  background:linear-gradient(135deg,var(--indigo),var(--violet) 58%,var(--violet-2));
+  color:#fff;box-shadow:0 12px 28px -8px rgba(124,58,237,.58);
+}
+.tool-modal[hidden]{display:none}
+.tool-modal{
+  position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:20px;
+  background:rgba(27,42,107,.16);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+.modal-card{
+  width:min(560px,100%);max-height:min(760px,calc(100vh - 40px));overflow:auto;
+  padding:20px;border-radius:28px;
+  background:linear-gradient(160deg,rgba(255,255,255,.96),rgba(250,248,255,.94));
+  border:1px solid rgba(255,255,255,.95);
+  box-shadow:0 0 0 1px rgba(124,58,237,.08),0 26px 80px rgba(49,46,129,.28),inset 0 1px 0 #fff;
+}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
+.modal-title{font-size:18px;font-weight:600;color:var(--ink)}
+.modal-close{
+  width:34px;height:34px;border:0;border-radius:50%;cursor:pointer;
+  background:var(--drop);color:var(--ink);font:600 16px var(--mono)
+}
+.modal-close:hover{background:#e7e8f3}
+.form-stack{display:grid;gap:12px}
+.field{display:grid;gap:7px}
+.field label{font-size:11px;color:var(--ink-soft)}
+.field input,.field textarea,.field select{
+  width:100%;border:1px solid rgba(124,58,237,.14);border-radius:16px;
+  outline:0;padding:12px 14px;background:rgba(255,255,255,.78);color:var(--ink);
+  font:400 13px var(--mono);box-shadow:inset 0 1px 3px rgba(49,46,129,.04);
+}
+.field input:focus,.field textarea:focus,.field select:focus{
+  border-color:rgba(124,58,237,.45);box-shadow:0 0 0 3px rgba(124,58,237,.09)
+}
+.field textarea{min-height:130px;resize:vertical}
+.form-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:3px}
+.action-btn{
+  min-height:42px;padding:0 16px;border:0;border-radius:16px;cursor:pointer;
+  font:600 12px var(--mono);color:var(--ink);background:var(--drop)
+}
+.action-btn.primary{color:#fff;background:linear-gradient(135deg,var(--indigo),var(--violet) 58%,var(--violet-2));box-shadow:0 10px 24px -7px rgba(124,58,237,.48)}
+.action-btn:disabled{opacity:.6;cursor:wait}
+.result-box{
+  margin-top:14px;padding:13px 15px;border-radius:16px;
+  background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.11);
+  font-size:13px;white-space:pre-wrap;word-break:break-word;color:var(--ink)
+}
+.result-box.err{color:#b4234f;background:rgba(180,35,79,.06);border-color:rgba(180,35,79,.14)}
+.comment-list{margin-top:4px;max-height:270px;overflow:auto}
+.comment-list:empty::before{content:"Комментариев пока нет";display:block;color:var(--ink-soft);font-size:12px;padding:10px 2px}
+.comment-list ul{padding-left:20px;color:var(--ink);font-size:12px;line-height:1.65}
+.comment-list li+li{margin-top:7px}
+.comment-form{margin-top:16px;padding-top:15px;border-top:1px solid rgba(124,58,237,.1)}
+@media (max-width:520px){
+  .comments-btn{right:14px;bottom:14px}
+  .tool-row{grid-template-columns:1fr}
+}
+
 @media (max-width:360px){#disp{font-size:42px}.pad{gap:9px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
@@ -87,7 +159,7 @@ body{
   <div class="pad" id="pad">
     <button class="b fn" data-k="c" aria-label="Очистить">C</button>
     <button class="b fn" data-k="n" aria-label="Сменить знак">±</button>
-    <button class="b fn" data-k="%" aria-label="Процент">%</button>
+    <button class="b op" data-k="mod" aria-label="Остаток от деления">mod</button>
     <button class="b op" data-k="/" aria-label="Разделить">÷</button>
     <button class="b" data-k="7">7</button><button class="b" data-k="8">8</button><button class="b" data-k="9">9</button>
     <button class="b op" data-k="*" aria-label="Умножить">×</button>
@@ -100,14 +172,97 @@ body{
     <button class="b eq" data-k="=" aria-label="Равно">=</button>
   </div>
   <div class="foot"><span class="dot" id="dot"></span><span id="ver">API…</span></div>
+
+
+  <div class="tool-row">
+    <button class="tool-btn" id="evaluateOpen">⌁ Выражение</button>
+    <button class="tool-btn" id="formulaOpen">ƒ Формула</button>
+  </div>
 </main>
+
+<button class="comments-btn" id="commentsOpen" aria-label="Открыть комментарии">Комментарии</button>
+
+<div class="tool-modal" id="evaluateModal" hidden>
+  <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="evaluateTitle">
+    <div class="modal-head">
+      <div class="modal-title" id="evaluateTitle">Сложное выражение</div>
+      <button class="modal-close" data-close="evaluateModal" aria-label="Закрыть">×</button>
+    </div>
+    <form class="form-stack" id="evaluateForm">
+      <div class="field">
+        <label for="expressionInput">expression</label>
+        <textarea id="expressionInput" name="expression" spellcheck="false" placeholder="Например: (12 + 8) * 3 / 2"></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="action-btn" type="button" data-close="evaluateModal">Отмена</button>
+        <button class="action-btn primary" type="submit">Вычислить</button>
+      </div>
+    </form>
+    <div class="result-box" id="evaluateResult" hidden></div>
+  </section>
+</div>
+
+<div class="tool-modal" id="formulaModal" hidden>
+  <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="formulaTitle">
+    <div class="modal-head">
+      <div class="modal-title" id="formulaTitle">Формула из YAML</div>
+      <button class="modal-close" data-close="formulaModal" aria-label="Закрыть">×</button>
+    </div>
+    <form class="form-stack" id="formulaForm">
+      <div class="field">
+        <label for="formulaA">a</label>
+        <input id="formulaA" name="a" type="number" step="any" required placeholder="12">
+      </div>
+      <div class="field">
+        <label for="formulaB">b</label>
+        <input id="formulaB" name="b" type="number" step="any" required placeholder="3">
+      </div>
+      <div class="field">
+        <label for="formulaOp">op</label>
+        <input id="formulaOp" name="op" list="formulaOps" required value="add" placeholder="add">
+        <datalist id="formulaOps">
+          <option value="add"></option>
+          <option value="subtract"></option>
+          <option value="multiply"></option>
+          <option value="divide"></option>
+        </datalist>
+      </div>
+      <div class="form-actions">
+        <button class="action-btn" type="button" data-close="formulaModal">Отмена</button>
+        <button class="action-btn primary" type="submit">Получить результат</button>
+      </div>
+    </form>
+    <div class="result-box" id="formulaResult" hidden></div>
+  </section>
+</div>
+
+<div class="tool-modal" id="commentsModal" hidden>
+  <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="commentsTitle">
+    <div class="modal-head">
+      <div class="modal-title" id="commentsTitle">Комментарии</div>
+      <button class="modal-close" data-close="commentsModal" aria-label="Закрыть">×</button>
+    </div>
+    <div class="comment-list" id="commentList" aria-live="polite"></div>
+    <form class="form-stack comment-form" id="commentForm">
+      <div class="field">
+        <label for="commentInput">Новый комментарий</label>
+        <textarea id="commentInput" name="comment" maxlength="1000" placeholder="Напишите комментарий…" required></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="action-btn primary" type="submit">Добавить</button>
+      </div>
+    </form>
+    <div class="result-box" id="commentResult" hidden></div>
+  </section>
+</div>
+
 <script>
 (() => {
   const API = '';
-  const OPS = {'+':['add','+'],'-':['subtract','−'],'*':['multiply','×'],'/':['divide','÷']};
+  const OPS = {'+':['add','+'],'-':['subtract','−'],'*':['multiply','×'],'/':['divide','÷'],'mod':['mod','mod']};
   const $ = id => document.getElementById(id);
   const disp = $('disp'), expr = $('expr'), tail = $('tail'), panel = $('panel'), pad = $('pad');
-  const btn = k => pad.querySelector(`[data-k="${CSS.escape(k)}"]`);
+  const btn = k => document.querySelector(`[data-k="${CSS.escape(k)}"]`);
 
   let acc = null, op = null, cur = '0', entered = true;
   const history = [];
@@ -150,8 +305,13 @@ body{
     disp.textContent = msg; disp.style.fontSize = ''; disp.classList.add('err');
   }
   async function calc(k, a, b) {
+    // /mod intentionally accepts strings (ModInput: a: str, b: str).
+    // Other calculator endpoints keep the numeric payload used by the original calculator.
+    const body = k === 'mod'
+      ? {a: String(a), b: String(b)}
+      : {a, b};
     const r = await fetch(`${API}/${OPS[k][0]}`, {
-      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({a, b})
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Некорректный ввод');
@@ -197,9 +357,6 @@ body{
         cur = fmt(r); acc = null; op = null; entered = false;
         setExpr(true); render(true);
         panel.classList.remove('pulse'); void panel.offsetWidth; panel.classList.add('pulse');
-      } else if (k === '%') {
-        const r = await calc('/', parseFloat(val()), 100);
-        cur = fmt(r); entered = true; render(true);
       } else if (k === 'n') {
         const n = -parseFloat(val());
         cur = fmt(n === 0 ? 0 : n); entered = true; render();
@@ -221,8 +378,15 @@ body{
   };
   pad.addEventListener('click', e => { const b = e.target.closest('.b'); if (b) press(b.dataset.k, b); });
 
-  const alias = {Enter: '=', Backspace: 'b', Escape: 'c', Delete: 'c', ',': '.', x: '*', X: '*', C: 'c', c: 'c'};
+  const alias = {Enter: '=', Backspace: 'b', Escape: 'c', Delete: 'c', ',': '.', x: '*', X: '*', C: 'c', c: 'c', m: 'mod', M: 'mod'};
   addEventListener('keydown', e => {
+    // Пока пользователь печатает в форме, клавиши должны работать только в поле
+    // и не передаваться калькулятору (включая Enter/Backspace).
+    const target = e.target;
+    if (target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target?.isContentEditable) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const k = alias[e.key] || e.key, el = btn(k);
     if (!el) return;
@@ -243,6 +407,164 @@ body{
     });
     pad.addEventListener('pointerleave', () => btns.forEach(b => b.style.transform = ''));
   }
+
+
+  // дополнительные формы
+  const evaluateModal = $('evaluateModal');
+  const formulaModal = $('formulaModal');
+  const commentsModal = $('commentsModal');
+
+  function openModal(modal) {
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal(modal) {
+    modal.hidden = true;
+    if ([evaluateModal, formulaModal, commentsModal].every(m => m.hidden)) {
+      document.body.style.overflow = '';
+    }
+  }
+
+  document.addEventListener('click', e => {
+    const opener = e.target.closest('#evaluateOpen,#formulaOpen,#commentsOpen');
+    if (opener) {
+      if (opener.id === 'evaluateOpen') openModal(evaluateModal);
+      if (opener.id === 'formulaOpen') openModal(formulaModal);
+      if (opener.id === 'commentsOpen') {
+        openModal(commentsModal);
+        loadComments();
+      }
+      return;
+    }
+
+    const closer = e.target.closest('[data-close]');
+    if (closer) closeModal($(closer.dataset.close));
+    if (e.target.classList.contains('tool-modal')) closeModal(e.target);
+  });
+
+  addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    [evaluateModal, formulaModal, commentsModal].forEach(m => { if (!m.hidden) closeModal(m); });
+  });
+
+  async function postData(path, body) {
+    const r = await fetch(`${API}${path}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const contentType = r.headers.get('content-type') || '';
+    const data = contentType.includes('application/json')
+      ? await r.json().catch(() => ({}))
+      : await r.text().catch(() => '');
+    if (!r.ok) {
+      const detail = typeof data === 'object' && data?.detail
+        ? (typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail))
+        : String(data || `HTTP ${r.status}`);
+      throw new Error(detail);
+    }
+    return data;
+  }
+
+  const showResult = (id, value, error = false) => {
+    const box = $(id);
+    box.hidden = false;
+    box.classList.toggle('err', error);
+    box.textContent = value;
+  };
+
+  $('evaluateForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const form = e.currentTarget, submit = form.querySelector('[type="submit"]');
+    const expression = $('expressionInput').value.trim();
+    if (!expression) return;
+    submit.disabled = true;
+    try {
+      const data = await postData('/evaluate', {expression});
+      const value = data && typeof data === 'object' && 'result' in data ? data.result : data;
+      showResult('evaluateResult', `Результат: ${typeof value === 'string' ? value : JSON.stringify(value)}`);
+    } catch (err) {
+      showResult('evaluateResult', err.message || 'Ошибка вычисления', true);
+    } finally {
+      submit.disabled = false;
+    }
+  });
+
+  $('formulaForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const form = e.currentTarget, submit = form.querySelector('[type="submit"]');
+    const a = Number($('formulaA').value), b = Number($('formulaB').value), opName = $('formulaOp').value.trim();
+    if (!Number.isFinite(a) || !Number.isFinite(b) || !opName) return;
+    submit.disabled = true;
+    try {
+      // FormulaInput expects one YAML string, not separate a/b/op fields.
+      const yamlConfig = `a: ${a}\nb: ${b}\nop: ${opName}`;
+      const data = await postData('/formula', {yaml_config: yamlConfig});
+      const value = data && typeof data === 'object' && 'result' in data ? data.result : data;
+      showResult('formulaResult', `Результат: ${typeof value === 'string' ? value : JSON.stringify(value)}`);
+    } catch (err) {
+      showResult('formulaResult', err.message || 'Ошибка вычисления', true);
+    } finally {
+      submit.disabled = false;
+    }
+  });
+
+  async function loadComments() {
+    const list = $('commentList');
+    const box = $('commentResult');
+    box.hidden = true;
+    list.innerHTML = '<div style="font-size:12px;color:var(--ink-soft)">Загрузка…</div>';
+    try {
+      const r = await fetch(`${API}/comment`);
+      const markup = await r.text();
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      // Backend deliberately returns ready-to-render HTML (<ul><li>…</li></ul>).
+      list.innerHTML = markup;
+    } catch (err) {
+      list.innerHTML = '';
+      showResult('commentResult', err.message || 'Не удалось загрузить комментарии', true);
+    }
+  }
+
+  $('commentForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const form = e.currentTarget, submit = form.querySelector('[type="submit"]');
+    const comment = $('commentInput').value.trim();
+    if (!comment) return;
+    submit.disabled = true;
+    try {
+      // CommentInput expects the field to be named exactly 'text'.
+      const r = await fetch(`${API}/comment`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({text: comment})
+      });
+      const markup = await r.text();
+      if (!r.ok) throw new Error(markup || `HTTP ${r.status}`);
+
+      // POST may return either the refreshed <ul> or the new <li>.
+      if (/<ul[\s>]/i.test(markup)) {
+        $('commentList').innerHTML = markup;
+      } else if (/<li[\s>]/i.test(markup)) {
+        let ul = $('commentList').querySelector('ul');
+        if (!ul) {
+          ul = document.createElement('ul');
+          $('commentList').replaceChildren(ul);
+        }
+        ul.insertAdjacentHTML('beforeend', markup);
+      } else {
+        await loadComments();
+      }
+
+      $('commentInput').value = '';
+      $('commentResult').hidden = true;
+    } catch (err) {
+      showResult('commentResult', err.message || 'Не удалось добавить комментарий', true);
+    } finally {
+      submit.disabled = false;
+    }
+  });
 
   // статус API
   fetch(`${API}/version`).then(r => r.json()).then(d => {

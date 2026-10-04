@@ -83,10 +83,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  deploy:
-    name: Обновить деплой на Render
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Вызвать deploy hook
-        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+# Из-за появления уязвимых RCE функций отключаем деплой. В деплое остается безопасная версия калькулятора
+#  deploy:
+#    name: Обновить деплой на Render
+#    needs: build-and-push
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Вызвать deploy hook
+#        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
