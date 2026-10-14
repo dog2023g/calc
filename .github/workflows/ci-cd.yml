@@ -121,18 +121,21 @@ jobs:
           docker logs calc
           exit 1
 
-      - name: Сканирование ZAP (API scan по OpenAPI)
+      - name: Сканирование ZAP (Получение эндпоинтов по OpenAPI, пауку. Активное сканирование)
         run: |
+          cp .zap/plan.yaml zap-out/plan.yaml
+          set +e
           docker run --rm --network zapnet \
             -v "$PWD/zap-out:/zap/wrk:rw" \
             ghcr.io/zaproxy/zaproxy:stable \
-            zap-api-scan.py \
-              -t http://calc:8000/openapi.json \
-              -f openapi \
-              -r zap-report.html \
-              -J zap-report.json \
-              -w zap-report.md \
-              -I
+            zap.sh -cmd -autorun /zap/wrk/plan.yaml
+          rc=$?
+          set -e
+          echo "Код возврата ZAP: $rc"
+          if [ "$rc" -ne 0 ] && [ "$rc" -ne 2 ]; then
+            exit "$rc"
+          fi
+
 
       - name: Добавить отчёт в summary
         if: always()

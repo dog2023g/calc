@@ -1,0 +1,57 @@
+env:
+  contexts:
+    - name: calc
+      urls:
+        - http://calc:8000
+      includePaths:
+        - http://calc:8000.*
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    progressToStdout: true
+
+jobs:
+  - type: openapi
+    parameters:
+      apiUrl: http://calc:8000/openapi.json
+      targetUrl: http://calc:8000
+      context: calc
+
+  - type: spider
+    parameters:
+      context: calc
+      url: http://calc:8000/
+      maxDuration: 5
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 5
+
+  - type: activeScan
+    parameters:
+      context: calc
+      maxRuleDurationInMins: 5
+      maxScanDurationInMins: 45
+    policyDefinition:
+      defaultStrength: High    
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 5
+
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: /zap/wrk
+      reportFile: zap-report
+      reportTitle: DAST отчёт (OWASP ZAP)
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: /zap/wrk
+      reportFile: zap-report
+  - type: report
+    parameters:
+      template: traditional-md
+      reportDir: /zap/wrk
+      reportFile: zap-report
