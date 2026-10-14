@@ -124,6 +124,52 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  image-scan:
+    name: Анализ образа (Trivy)
+    needs: [bump-version, build-and-push]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}:${{ needs.bump-version.outputs.new_version }}
+      TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.74.0
+    steps:
+      - uses: actions/checkout@v4   # нужен scripts/trivy_summary.py
+        with:
+          ref: main
+
+      - name: Войти в ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Скачать опубликованный образ
+        run: docker pull "$IMAGE"
+
+      - name: Сканирование Trivy
+        run: |
+          mkdir -p trivy-out
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD/trivy-out:/out" \
+            "$TRIVY_IMAGE" \
+            image --no-progress --format json --output /out/trivy.json "$IMAGE"
+
+      - name: Добавить отчёт в summary
+        if: always()
+        run: python3 scripts/trivy_summary.py trivy-out/trivy.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Сохранить отчёт Trivy
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-out/
+          if-no-files-found: warn
+
   dast:
     name: DAST (OWASP ZAP, API scan)
     needs: [bump-version, build-and-push]
