@@ -92,6 +92,10 @@ jobs:
       contents: read
       packages: read
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          
       - name: Войти в ghcr.io
         uses: docker/login-action@v3
         with:
