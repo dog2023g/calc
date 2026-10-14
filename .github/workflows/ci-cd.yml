@@ -25,6 +25,47 @@ jobs:
       - name: Запустить тесты
         run: pytest -q
 
+  sast:
+    name: SAST (Semgrep)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+
+      # Код возврата semgrep ci: 0 - без уязвимостей, 1 - есть находки уязвимостей,
+      # 2 и выше - сбой (ошибка конфигурации, неверный токен и т.д.)
+      - name: Сканирование Semgrep
+        run: |
+          mkdir -p semgrep-out
+          set +e
+          semgrep ci \
+            --json-output=semgrep-out/semgrep.json \
+            --sarif-output=semgrep-out/semgrep.sarif \
+            --text-output=semgrep-out/semgrep.txt
+          rc=$?
+          set -e
+          echo "Код возврата semgrep: $rc"
+          if [ "$rc" -gt 1 ]; then
+            exit "$rc"
+          fi
+
+      - name: Добавить отчёт в summary
+        if: always()
+        run: python3 scripts/semgrep_summary.py semgrep-out/semgrep.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Сохранить отчёты Semgrep
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: semgrep-out/
+          if-no-files-found: warn
+
   bump-version:
     name: Обновить версию
     needs: test
