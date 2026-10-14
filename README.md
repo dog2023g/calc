@@ -47,6 +47,7 @@ curl -X POST localhost:8000/divide -H "Content-Type: application/json" -d '{"a":
    - всё остальное → patch.
    Новый `VERSION` коммитится ботом в `main` с пометкой `[skip ci]`, чтобы не запускать пайплайн повторно, и ставится git-тег `vX.Y.Z`.
 3. **Сборка и публикация образа** — Docker-образ собирается уже с обновлённым `VERSION` внутри и публикуется в GitHub Container Registry: `ghcr.io/<owner>/<repo>:X.Y.Z` и `:latest`.
+4. **DAST-сканирование** — job `dast` запускает опубликованный образ в docker-сети и сканирует его с помощью OWASP ZAP режиме API scan по OpenAPI-документации (/openapi.json)
 
 P.S.
 После добавления уязвимых эндпоинтов в калькулятор пайплайн **не деплоит на Render автоматически**

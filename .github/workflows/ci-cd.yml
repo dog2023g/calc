@@ -83,6 +83,80 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  dast:
+    name: DAST (OWASP ZAP, API scan)
+    needs: [bump-version, build-and-push]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Войти в ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Запустить приложение из опубликованного образа
+        run: |
+          docker network create zapnet
+          docker run -d --name calc --network zapnet -p 8000:8000 \
+            ghcr.io/${{ github.repository }}:${{ needs.bump-version.outputs.new_version }}
+
+      - name: Дождаться готовности и получить OpenAPI-спецификацию
+        run: |
+          mkdir -p zap-out
+          chmod 777 zap-out   # в контейнере ZAP работает пользователь zap, ему нужна запись
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/health >/dev/null; then
+              curl -fsS http://localhost:8000/openapi.json -o zap-out/openapi.json
+              echo "Приложение готово, спецификация сохранена"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Приложение не запустилось за 60 секунд"
+          docker logs calc
+          exit 1
+
+      - name: Сканирование ZAP (API scan по OpenAPI)
+        run: |
+          docker run --rm --network zapnet \
+            -v "$PWD/zap-out:/zap/wrk:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-api-scan.py \
+              -t http://calc:8000/openapi.json \
+              -f openapi \
+              -r zap-report.html \
+              -J zap-report.json \
+              -w zap-report.md \
+              -I
+
+      - name: Добавить отчёт в summary
+        if: always()
+        run: |
+          if [ -f zap-out/zap-report.md ]; then
+            cat zap-out/zap-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Сохранить отчёты ZAP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: zap-out/
+          if-no-files-found: warn
+
+      - name: Логи приложения
+        if: failure()
+        run: docker logs calc
+
+      - name: Остановить приложение
+        if: always()
+        run: docker rm -f calc
+
 # Из-за появления уязвимых RCE функций отключаем деплой. В деплое остается безопасная версия калькулятора
 #  deploy:
 #    name: Обновить деплой на Render
