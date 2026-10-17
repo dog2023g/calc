@@ -67,21 +67,21 @@ jobs:
           if-no-files-found: warn
 
   llm-review:
-    name: LLM-проверка кода (GitHub Models)
+    name: LLM-проверка кода
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      models: read          
     steps:
       - uses: actions/checkout@v4
 
       - name: LLM-анализ кода в /app
-        continue-on-error: true   
+        continue-on-error: true
         run: python3 scripts/llm_review.py
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: https://api.groq.com/openai/v1   
+          LLM_MODEL: openai/gpt-oss-120b                          
           SCAN_DIR: app
-          LLM_MODEL: openai/gpt-4o-mini
           FAIL_ON_HIGH: "false"
 
       - name: Сохранить отчёт LLM
