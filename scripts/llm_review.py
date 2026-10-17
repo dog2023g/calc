@@ -2,7 +2,6 @@
 """LLM-проверка кода на уязвимости через GitHub Models (бесплатный tier).
 
 Сканирует все файлы в SCAN_DIR, пишет report.md и GitHub Step Summary.
-Только стандартная библиотека Python — ничего ставить не нужно.
 """
 import json
 import os
@@ -47,6 +46,16 @@ def chunks(text):
         yield start, buf
 
 
+def parse_findings(content):
+    """Достаёт JSON из ответа модели, даже если он обёрнут в ```json ... ```."""
+    text = (content or "").strip()
+    start, end = text.find("{"), text.rfind("}")
+    if start == -1 or end == -1:
+        raise ValueError("в ответе нет JSON")
+    data = json.loads(text[start : end + 1])
+    return data.get("findings", [])
+
+
 def ask(path, start, lines):
     numbered = "\n".join(f"{start + i}: {l}" for i, l in enumerate(lines))
     body = json.dumps(
@@ -71,8 +80,23 @@ def ask(path, start, lines):
         )
         try:
             with urllib.request.urlopen(req, timeout=120) as r:
-                content = json.load(r)["choices"][0]["message"]["content"]
-            return json.loads(content).get("findings", [])
+                raw = r.read().decode("utf-8", errors="replace")
+            try:
+                choice = json.loads(raw)["choices"][0]
+            except (ValueError, KeyError, IndexError):
+                print(f"Неожиданный ответ API для {path}: {raw[:500]!r}", file=sys.stderr)
+                return None
+            content = (choice.get("message") or {}).get("content")
+            try:
+                return parse_findings(content)
+            except ValueError as e:
+                print(
+                    f"Не разобрать ответ для {path} "
+                    f"(finish_reason={choice.get('finish_reason')}): {e}\n"
+                    f"Ответ модели: {(content or '')[:500]!r}",
+                    file=sys.stderr,
+                )
+                return None
         except urllib.error.HTTPError as e:
             if e.code == 429:  # лимит free tier — ждём и повторяем
                 wait = int(e.headers.get("Retry-After", 30 * (attempt + 1)))
@@ -81,9 +105,9 @@ def ask(path, start, lines):
                 continue
             print(f"HTTP {e.code} для {path}: {e.read()[:300]!r}", file=sys.stderr)
             return None
-        except (json.JSONDecodeError, KeyError) as e:
-            print(f"Не разобрать ответ для {path}: {e}", file=sys.stderr)
-            return None
+        except (urllib.error.URLError, TimeoutError) as e:
+            print(f"Сетевая ошибка для {path}: {e}", file=sys.stderr)
+            time.sleep(5)
     return None
 
 
@@ -100,15 +124,21 @@ def main():
     for path in files:
         text = path.read_text(encoding="utf-8", errors="ignore")
         findings = []
+        failed = 0
         for start, lines in chunks(text):
             res = ask(path, start, lines)
             time.sleep(PAUSE)
             if res is None:
                 errors += 1
+                failed += 1
                 continue
             findings += res
         report.append(f"\n## `{path}`\n")
-        if not findings:
+        if failed:
+            report.append(
+                f"⚠️ Анализ не удался для частей файла: {failed}. Результат неполный.\n"
+            )
+        elif not findings:
             report.append("Проблем не найдено.\n")
         for f in findings:
             sev = str(f.get("severity", "?")).upper()
@@ -130,6 +160,8 @@ def main():
             fh.write(out)
     print(out)
 
+    if errors:  # не прячем сбой анализа за зелёным статусом
+        sys.exit(1)
     if FAIL_ON_HIGH and high:
         sys.exit(1)
 
