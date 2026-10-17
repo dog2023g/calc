@@ -66,6 +66,32 @@ jobs:
           path: semgrep-out/
           if-no-files-found: warn
 
+  llm-review:
+    name: LLM-проверка кода (GitHub Models)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      models: read          
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: LLM-анализ кода в /app
+        continue-on-error: true   
+        run: python3 scripts/llm_review.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SCAN_DIR: app
+          LLM_MODEL: openai/gpt-4o-mini
+          FAIL_ON_HIGH: "false"
+
+      - name: Сохранить отчёт LLM
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: llm-report
+          path: report.md
+          if-no-files-found: warn
+          
   bump-version:
     name: Обновить версию
     needs: test
