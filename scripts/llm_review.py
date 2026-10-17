@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""LLM-проверка кода на уязвимости через GitHub Models
+"""LLM-проверка кода на уязвимости через GitHub Models (бесплатный tier).
 
 Сканирует все файлы в SCAN_DIR, пишет report.md и GitHub Step Summary.
+Только стандартная библиотека Python — ничего ставить не нужно.
 """
 import json
 import os
@@ -16,7 +17,7 @@ MODEL = os.getenv("LLM_MODEL", "openai/gpt-4o-mini")
 SCAN_DIR = pathlib.Path(os.getenv("SCAN_DIR", "app"))
 EXTS = {".py", ".js", ".html"}
 MAX_CHARS = int(os.getenv("MAX_CHARS", "12000"))  # размер куска кода за запрос
-PAUSE = float(os.getenv("PAUSE_SEC", "4"))  # пауза между запросами 
+PAUSE = float(os.getenv("PAUSE_SEC", "4"))  # пауза между запросами (лимиты free tier)
 FAIL_ON_HIGH = os.getenv("FAIL_ON_HIGH", "false").lower() == "true"
 TOKEN = os.environ["GITHUB_TOKEN"]
 
@@ -92,7 +93,7 @@ def main():
         for p in SCAN_DIR.rglob("*")
         if p.is_file() and p.suffix in EXTS and "__pycache__" not in p.parts
     )
-    report = [f"# LLM Security Review\n\nМодель: {MODEL}, файлов: {len(files)}\n"]
+    report = [f"# LLM Security Review\n\nМодель: `{MODEL}`, файлов: {len(files)}\n"]
     high = 0
     errors = 0
 
@@ -114,13 +115,13 @@ def main():
             if sev in ("CRITICAL", "HIGH"):
                 high += 1
             report.append(
-                f"- [{sev}] {f.get('title', '')} "
+                f"- **[{sev}] {f.get('title', '')}** "
                 f"({f.get('cwe', '')}, строка {f.get('line', '?')})\n"
                 f"  - {f.get('explanation', '')}\n"
                 f"  - Исправление: {f.get('fix', '')}\n"
             )
 
-    report.append(f"\n---\nCRITICAL/HIGH: {high}, ошибок запросов: {errors}\n")
+    report.append(f"\n---\nCRITICAL/HIGH: **{high}**, ошибок запросов: {errors}\n")
     out = "\n".join(report)
     pathlib.Path("report.md").write_text(out, encoding="utf-8")
     summary = os.getenv("GITHUB_STEP_SUMMARY")
@@ -133,5 +134,5 @@ def main():
         sys.exit(1)
 
 
-if name == "__main__":
+if __name__ == "__main__":
     main()
